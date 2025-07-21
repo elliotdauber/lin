@@ -14,8 +14,6 @@ export const get = Command.make("get", {}, () =>
             return;
         }
 
-        yield* Console.log("");
-
         if (Option.isSome(maybeProject)) {
             const project = maybeProject.value.project;
             const milestone = maybeProject.value.milestone;
@@ -26,7 +24,5 @@ export const get = Command.make("get", {}, () =>
             const issue = maybeIssue.value;
             yield* Console.log(`${stateToEmoji(issue.state)} ${issue.identifier}: ${issue.title}`)
         }
-
-        yield* Console.log("");
     })
 ) 
