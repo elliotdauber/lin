@@ -1,4 +1,6 @@
-# ln
+# lin
+
+## A CLI for Linear written with Effect CLI
 
 To install dependencies:
 
