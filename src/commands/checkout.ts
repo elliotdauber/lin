@@ -1,4 +1,4 @@
-import { Args, Command } from "@effect/cli"
+import { Args, Command, Options } from "@effect/cli"
 import { Console, Effect, Option } from "effect"
 import * as prompts from "@inquirer/prompts";
 import { Searcher } from "fast-fuzzy";
@@ -90,8 +90,41 @@ const checkoutMilestone = Effect.gen(function* () {
     yield* state.setProject({ ...project.value, milestone })
 })
 
-const checkoutIssue = Effect.gen(function* () {
+const fetchIssues = ({
+    projectId,
+    milestoneId,
+}: {
+    projectId: string;
+    milestoneId?: string;
+}) => Effect.gen(function* () {
     const linearClient = yield* LinearClient;
+
+    const me = yield* linearClient.use((client) => client.viewer);
+
+    const issues = yield* linearClient.use((client) => client.issues({
+        filter: {
+            project: { id: { eq: projectId } },
+            projectMilestone: milestoneId ? { id: { eq: milestoneId } } : undefined,
+            state: { type: { nin: ["canceled", "duplicate", "triage", "backlog", "completed"] } },
+            assignee: { id: { eq: me.id } },
+        },
+    }));
+
+    return yield* Effect.forEach(issues.nodes, (issue) => Effect.gen(function* () {
+        const statePromise = issue.state;
+        const state = statePromise ? yield* Effect.tryPromise(() => statePromise.then((state) => state.name)) : undefined;
+        return {
+            id: issue.id,
+            identifier: issue.identifier,
+            title: issue.title,
+            state,
+        } satisfies Issue
+    }).pipe(Effect.catchAll(() => Effect.succeed(undefined))), { concurrency: 10 }).pipe(
+        Effect.map(issues => issues.filter(issue => issue !== undefined))
+    );
+});
+
+const checkoutIssue = (force: boolean) => Effect.gen(function* () {
     const state = yield* State;
     const project = yield* state.getProject();
     if (Option.isNone(project)) {
@@ -99,23 +132,41 @@ const checkoutIssue = Effect.gen(function* () {
         return;
     }
 
-    yield* Console.log(`Fetching issues...`);
+    const maybeAllIssues = yield* state.getAllIssues();
 
-    const me = yield* linearClient.use((client) => client.viewer);
+    const maybeIssuesForProject = maybeAllIssues.pipe(
+        Option.map(allIssues => allIssues.filter(
+            (issue) => issue.context.projectId === project.value.project.id &&
+                (!project.value.milestone ||
+                    issue.context.milestoneId === project.value.milestone.id)
+        ).map(issue => issue.issue)
+        ));
 
-    const issues = yield* linearClient.use((client) => client.issues({
-        filter: {
-            project: { id: { eq: project.value.project.id } },
-            projectMilestone: project.value.milestone ? { id: { eq: project.value.milestone.id } } : undefined,
-            state: { type: { nin: ["canceled", "duplicate", "triage", "backlog", "completed"] } },
-            assignee: { id: { eq: me.id } },
-        },
-    }));
+    if (Option.isSome(maybeIssuesForProject) && maybeIssuesForProject.value.length === 0 && !force) {
+        yield* Console.log("No issues found");
+        return;
+    }
+
+    const allIssues = Option.getOrElse(maybeAllIssues, () => []);
+    const issuesForProject = Option.getOrElse(maybeIssuesForProject, () => []);
+
+    const issues = yield* Effect.if(force || Option.isNone(maybeIssuesForProject), {
+        onTrue: () => fetchIssues({
+            projectId: project.value.project.id,
+            milestoneId: project.value.milestone?.id,
+        }).pipe(Effect.tap(
+            issues => state.setAllIssues(Option.some([
+                ...allIssues.filter(issue => !issues.some(i => i.id === issue.issue.id)),
+                ...issues.map(issue => ({ issue, context: { projectId: project.value.project.id, milestoneId: project.value.milestone?.id } }))
+            ]))
+        )),
+        onFalse: () => Effect.succeed(issuesForProject),
+    })
 
     const issueNameToObject = new Map<string, Issue & { state: string | undefined }>();
-    for (const issue of issues.nodes) {
-        const statePromise = issue.state;
-        const state = statePromise ? yield* Effect.tryPromise(() => statePromise.then((state) => state.name)) : undefined;
+
+    for (const issue of issues) {
+        const state = issue.state;
         const emoji = state ? STATE_TO_EMOJI[state as keyof typeof STATE_TO_EMOJI] || "❓" : "❓"
         const title = `${emoji} ${issue.identifier}: ${issue.title}`
         issueNameToObject.set(title, { ...issue, state });
@@ -168,25 +219,30 @@ const checkoutResource = Args.choice<"project" | "milestone" | "issue">([
     Args.withDescription("The resource to checkout. Can be 'project', 'milestone', or 'issue'"),
 );
 
-const handleCheckout = (resource: "project" | "milestone" | "issue") => Effect.gen(function* () {
+const force = Options.boolean('force', {
+    aliases: ['f'],
+    ifPresent: true,
+});
+
+const handleCheckout = (resource: "project" | "milestone" | "issue", force: boolean) => Effect.gen(function* () {
     if (resource === "project") {
         yield* checkoutProject;
     } else if (resource === "milestone") {
         yield* checkoutMilestone;
     } else if (resource === 'issue') {
-        yield* checkoutIssue;
+        yield* checkoutIssue(force);
     }
 })
 
-export const checkout = Command.make("checkout", { resource: checkoutResource }, ({ resource }) =>
-    handleCheckout(resource)
+export const checkout = Command.make("checkout", { resource: checkoutResource, force }, ({ resource, force }) =>
+    handleCheckout(resource, force)
 ).pipe(
     Command.withDescription("Check out a project, milestone, or issue. Can use 'co' as an alias."),
     Command.provide(LinearClient.layer)
 )
 
-export const co = Command.make("co", { resource: checkoutResource }, ({ resource }) =>
-    handleCheckout(resource)
+export const co = Command.make("co", { resource: checkoutResource, force }, ({ resource, force }) =>
+    handleCheckout(resource, force)
 ).pipe(
     Command.withDescription("Check out a project, milestone, or issue. Alias for 'checkout'"),
     Command.provide(LinearClient.layer)

@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Option, Ref, Schema } from "effect";
+import { Context, Effect, Layer, Ref, Schema } from "effect";
 import { FileSystem } from "@effect/platform";
 import * as path from "path";
 

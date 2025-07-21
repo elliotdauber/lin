@@ -8,7 +8,9 @@ export type Project = typeof Project.Type;
 
 export const Issue = Schema.Struct({
     id: Schema.String,
+    identifier: Schema.String,
     title: Schema.String,
+    state: Schema.optional(Schema.String),
 });
 export type Issue = typeof Issue.Type;
 

@@ -2,7 +2,7 @@ import { FileSystem } from "@effect/platform"
 import { Context, Effect, Layer, Option, Redacted, Ref, Schema } from "effect"
 import { homedir } from "os";
 import * as path from "path";
-import { Store } from "./kvstore";
+import { Store } from "./store";
 
 
 const AuthSchema = Schema.Struct({
