@@ -15,7 +15,7 @@ export const branch = Command.make("branch", {}, () =>
         }
 
         const branchName = yield* linearClient.use((client) => client.issue(issue.value.id).then((i) => i.branchName))
-        clipboard.writeSync(branchName);
+        clipboard.writeSync(`gt checkout ${branchName}`);
         yield* Console.log(`Copied branch name to clipboard: ${branchName}`)
     })
 ).pipe(

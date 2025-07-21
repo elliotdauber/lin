@@ -18,7 +18,7 @@ export const start = Command.make("start", {}, () =>
         yield* setStatus("ip")
 
         const branchName = yield* linearClient.use((client) => client.issue(issue.value.id).then((i) => i.branchName))
-        clipboard.writeSync(branchName);
+        clipboard.writeSync(`gt create ${branchName}`);
         yield* Console.log(`Set issue to started and copied branch name to clipboard: ${branchName}`)
     })
 ).pipe(
