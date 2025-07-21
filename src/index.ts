@@ -1,4 +1,4 @@
-import { Command } from "@effect/cli"
+import { CliApp, CliConfig, Command } from "@effect/cli"
 import { NodeContext, NodeRuntime } from "@effect/platform-node"
 import { Console, Effect, Option } from "effect"
 import { State } from "./services/state"
@@ -30,6 +30,7 @@ export const run = () => cli(process.argv).pipe(
     Effect.provide(State.layer),
     Effect.provide(Auth.layer),
     Effect.catchTag('LinearApiKeyNotFound', () => Console.log("Authentication required. Please run `lin init` to set your Linear API key")),
+    Effect.ignore,
     Effect.provide(NodeContext.layer),
     NodeRuntime.runMain
 )

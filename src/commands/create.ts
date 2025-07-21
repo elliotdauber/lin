@@ -1,13 +1,25 @@
 import { Args, Command } from "@effect/cli"
-import { Console, Effect, Option } from "effect"
+import { Console, Effect, Option, Schedule } from "effect"
 import { LinearClient } from "../services/linear-client"
 import { State } from "../services/state"
 import { STATES } from "../utils"
+import * as prompts from "@inquirer/prompts"
 
-const title = Args.text({ name: "title" });
+const title = Args.text({ name: "title" }).pipe(Args.optional);
 
-export const create = Command.make("create", { title }, ({ title }) =>
+export const create = Command.make("create", { title }, ({ title: maybeTitle }) =>
     Effect.gen(function* () {
+        const title = yield* maybeTitle.pipe(
+            Option.match({
+                onSome: Effect.succeed,
+                onNone: () =>
+                    Effect.tryPromise(() => prompts.input({ message: "What should the issue be called?" })).pipe(
+                        Effect.filterOrFail(title => title.trim().length > 0),
+                        Effect.tapErrorTag('NoSuchElementException', () => Console.error("Use at least one character")),
+                    )
+            }),
+        );
+
         const linearClient = yield* LinearClient;
         const state = yield* State;
         const project = yield* state.getProject();
