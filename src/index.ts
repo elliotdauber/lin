@@ -2,7 +2,7 @@ import { CliApp, CliConfig, Command } from "@effect/cli"
 import { NodeContext, NodeRuntime } from "@effect/platform-node"
 import { Console, Effect, Option } from "effect"
 import { State } from "./services/state"
-import { checkout, co, get, create, branch, start, set, init, dev } from "./commands"
+import { checkout, co, get, create, branch, start, set, init, dev, open } from "./commands"
 import { Auth } from "./services/auth"
 
 const lin = Command.make("lin", {}, () =>
@@ -18,7 +18,7 @@ const lin = Command.make("lin", {}, () =>
 )
 
 const command = lin.pipe(
-    Command.withSubcommands([init, create, get, checkout, co, branch, start, set, dev])
+    Command.withSubcommands([init, create, get, checkout, co, branch, start, set, dev, open])
 )
 
 const cli = Command.run(command, {
