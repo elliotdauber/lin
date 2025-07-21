@@ -236,13 +236,13 @@ const handleCheckout = (resource: "project" | "milestone" | "issue", force: bool
 export const checkout = Command.make("checkout", { resource: checkoutResource, force }, ({ resource, force }) =>
     handleCheckout(resource, force)
 ).pipe(
-    Command.withDescription("Check out a project, milestone, or issue. Can use 'co' as an alias."),
+    Command.withDescription("Check out a project, milestone, or issue"),
     Command.provide(LinearClient.layer)
 )
 
 export const co = Command.make("co", { resource: checkoutResource, force }, ({ resource, force }) =>
     handleCheckout(resource, force)
 ).pipe(
-    Command.withDescription("Check out a project, milestone, or issue. Alias for 'checkout'"),
+    Command.withDescription("Check out a project, milestone, or issue"),
     Command.provide(LinearClient.layer)
 )

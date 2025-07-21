@@ -6,6 +6,9 @@
   "bin": {
     "lin": "src/bin.ts"
   },
+  "scripts": {
+    "zsh": "lin --completions zsh > ~/.config/lin/lin.zsh"
+  },
   "dependencies": {
     "@effect/cli": "^0.67.1",
     "@effect/platform": "^0.88.2",
