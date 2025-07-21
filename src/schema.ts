@@ -1,4 +1,5 @@
 import { Schema } from "effect"
+import { StatusName } from "./utils";
 
 export const Project = Schema.Struct({
     id: Schema.String,
@@ -10,7 +11,7 @@ export const Issue = Schema.Struct({
     id: Schema.String,
     identifier: Schema.String,
     title: Schema.String,
-    state: Schema.optional(Schema.String),
+    state: Schema.optional(StatusName),
 });
 export type Issue = typeof Issue.Type;
 

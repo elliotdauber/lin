@@ -36,14 +36,20 @@ export const create = Command.make("create", { title }, ({ title }) =>
             projectMilestoneId: project.value.milestone?.id
         }));
 
-        if (!(issue as any).issueId) {
+        const issueId = issue.issueId;
+
+        if (!issueId) {
             yield* Console.error("Issue not created successfully")
             return;
         }
 
+        const issueObject = yield* linearClient.use((client) => client.issue(issueId));
+
         yield* state.setIssue({
-            id: (issue as any).issueId,
+            id: issueId,
+            identifier: issueObject.identifier,
             title,
+            state: 'Todo'
         });
 
         yield* Console.log(`Issue created and checked out: ${title}`)

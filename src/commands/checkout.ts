@@ -5,7 +5,7 @@ import { Searcher } from "fast-fuzzy";
 import { LinearClient } from "../services/linear-client"
 import { State } from "../services/state"
 import { Project, Issue } from "../schema"
-import { STATE_TO_EMOJI } from "../utils"
+import { STATE_TO_EMOJI, stateToEmoji, StatusName } from "../utils"
 
 const checkoutProject = Effect.gen(function* () {
     const linearClient = yield* LinearClient;
@@ -117,7 +117,7 @@ const fetchIssues = ({
             id: issue.id,
             identifier: issue.identifier,
             title: issue.title,
-            state,
+            state: state as StatusName, // todo
         } satisfies Issue
     }).pipe(Effect.catchAll(() => Effect.succeed(undefined))), { concurrency: 10 }).pipe(
         Effect.map(issues => issues.filter(issue => issue !== undefined))
@@ -166,10 +166,9 @@ const checkoutIssue = (force: boolean) => Effect.gen(function* () {
     const issueNameToObject = new Map<string, Issue & { state: string | undefined }>();
 
     for (const issue of issues) {
-        const state = issue.state;
-        const emoji = state ? STATE_TO_EMOJI[state as keyof typeof STATE_TO_EMOJI] || "❓" : "❓"
+        const emoji = stateToEmoji(issue.state)
         const title = `${emoji} ${issue.identifier}: ${issue.title}`
-        issueNameToObject.set(title, { ...issue, state });
+        issueNameToObject.set(title, { ...issue, state: issue.state ?? undefined });
     }
 
     const fuzzySearch = new Searcher(Array.from(issueNameToObject.keys()));

@@ -1,11 +1,13 @@
-import { Effect, Console, Option } from "effect"
+import { Effect, Console, Option, Schema } from "effect"
 import { LinearClient } from "./services/linear-client"
 import { State } from "./services/state"
 
 export const Statuses = ["todo", "ip", "ir", "done", "tr", "dup", "bl", "cancel"] as const;
 export const StatusNames = ["Todo", "In Progress", "In Review", "Done", "Triage", "Duplicate", "Backlog", "Cancelled"] as const;
-export type Status = (typeof Statuses)[number]
-export type StatusName = (typeof StatusNames)[number]
+export const Status = Schema.Literal(...Statuses)
+export type Status = typeof Status.Type
+export const StatusName = Schema.Literal(...StatusNames)
+export type StatusName = typeof StatusName.Type
 
 export const STATUS_TO_STATE: Record<Status, StatusName> = {
     "todo": "Todo",
@@ -39,6 +41,8 @@ export const STATE_TO_EMOJI: Record<StatusName, string> = {
     "Cancelled": "❌",
     "Duplicate": "❌",
 }
+
+export const stateToEmoji = (state?: StatusName) => state ? STATE_TO_EMOJI[state] : "❓"
 
 export const isValidStatus = (status: string): status is Status => Statuses.includes(status as Status)
 
