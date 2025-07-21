@@ -1,0 +1,26 @@
+{
+  "name": "lin",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "lin": "src/bin.ts"
+  },
+  "dependencies": {
+    "@effect/cli": "^0.67.1",
+    "@effect/platform": "^0.88.2",
+    "@effect/platform-node": "^0.91.0",
+    "@inquirer/prompts": "^7.6.0",
+    "@linear/sdk": "^52.0.0",
+    "clipboardy": "^4.0.0",
+    "effect": "^3.16.16",
+    "fast-fuzzy": "^1.12.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "packageManager": "pnpm@8.15.7+sha512.c85cd21b6da10332156b1ca2aa79c0a61ee7ad2eb0453b88ab299289e9e8ca93e6091232b25c07cbf61f6df77128d9c849e5c9ac6e44854dbd211c49f3a67adc"
+}
